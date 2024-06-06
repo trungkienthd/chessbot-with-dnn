@@ -72,4 +72,4 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 wcc_env
-Program/__pycache__
+__pycache__
