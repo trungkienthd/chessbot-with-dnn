@@ -17,20 +17,12 @@ class Chess():
     def getPossibleMoves(self):  
         return [move.uci() for move in self.board.legal_moves]
     
-    def isGameOver(self):
-        return (self.board.is_checkmate() or
-                self.board.is_stalemate() or
-                self.board.is_insufficient_material() or
-                self.board.is_seventyfive_moves() or  # Optionally, checking the 75-move rule
-                self.board.is_fivefold_repetition() or  # Optionally, checking for fivefold repetition
-                self.board.can_claim_draw())  # General draw claim (includes threefold repetition and fifty-move rule)
-    
     def makeAMove(self, moveToString):
         if moveToString in self.getPossibleMoves():
             try:
                 self.board.push_uci(moveToString)
+                print("\n=======================================================================================")
                 print("Move {} performed successfully.".format(moveToString))
-                # print("\n=======================================================================================")
                 # print("Current board's FEN: {}".format(self.board.fen()))
             except:
                 print("Failed to perform move {}: {}".format(moveToString, sys.exc_info()[0]))

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 import chess
+import chess.engine
 
 from chessManager.chess import Chess
 from chessBots.randomBot import RandomBot
@@ -96,8 +97,8 @@ class DataGenerator():
         
         self.chess = Chess()
         
-        self.whiteRandomBot = RandomBot(chess=self.chess)
-        self.blackRandomBot = RandomBot(chess=self.chess)
+        self.whiteRandomBot = self.initializeBot(botName=whiteBot)
+        self.blackRandomBot = self.initializeBot(botName=blackBot)
         
         self.turn = "White"
         
@@ -115,7 +116,8 @@ class DataGenerator():
                                           "White Kingside Castling Right", "White Queenside Castling Right", "Black Kingside Castling Right", "Black Queenside Castling Right",
                                           "En passant Target",
                                           "Halfmove Clock",
-                                          "Fullmove Number"])
+                                          "Fullmove Number",
+                                          "Who is winning"])
         
         for i in range(0, numberOfSimulations):
             self.simulate()
@@ -123,22 +125,40 @@ class DataGenerator():
         self.data.to_csv("./deepLearningAI/data/{}_Simulations_Of_White_{}_VS_Black_{}.csv".format(numberOfSimulations, self.whiteRandomBot, self.blackRandomBot), index=False)
         self.printData()
         
+    def initializeBot(self, botName="Random"):
+        if botName == "Random":
+            return RandomBot(chess=self.chess)
+        else:
+            print("\nBot {} is not defined. The Random bot is initialize instead.".format(botName))
+            return RandomBot(chess=self.chess)
+        
     def simulate(self):
         self.chess = Chess()
         self.whiteRandomBot.chess = self.chess
         self.blackRandomBot.chess = self.chess
         self.boardEncoder = BoardEncoder(self.chess.board)
         
-        while not self.chess.isGameOver():
+        while not self.chess.board.is_game_over():
             if self.turn == "White":
                 self.whiteRandomBot.perform()
                 self.turn = "Black"
             elif self.turn == "Black":
                 self.blackRandomBot.perform()
                 self.turn = "White"
-                
-            self.data.loc[len(self.data)] = self.boardEncoder.initializeEncodedFenArray()
             
+            score = self.stockfish(board=self.chess.board)  
+            # Handling None value
+            if score is None:
+                score = 0
+            self.data.loc[len(self.data)] = np.concatenate((self.boardEncoder.initializeEncodedFenArray(), np.array([score])))   
+            print(" => Score: {}".format(score))      
+            
+    def stockfish(self, board):
+        with chess.engine.SimpleEngine.popen_uci('./deepLearningAI/training/stockfish/stockfish-windows-x86-64-avx2.exe') as sf:
+            result = sf.analyse(board, chess.engine.Limit(time=0.1))
+            score = result['score'].white().score()
+            return score
+                    
     def printData(self):
         print("\n=======================================================================================")
         print("Data generated when simulating a match between {} (White) and {} (Black):".format(self.whiteRandomBot, self.blackRandomBot))
