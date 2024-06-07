@@ -73,5 +73,10 @@ crashlytics-build.properties
 
 wcc_env
 __pycache__
+deepLearningAI/models/*
+chessManager/__pycache__
+chessBots/__pycache__
+Program/__pycache__
+Program/deepLearningAI/models
 Program/chessManager/__pycache__
 Program/chessBots/__pycache__
