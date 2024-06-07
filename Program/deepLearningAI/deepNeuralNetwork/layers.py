@@ -4,7 +4,7 @@ import numpy as np
 # LINEAR LAYER CLASS
 class Linear():
     
-    def __init__(self, inputDimension, outputDimension, regularization=0.0, learningRate=3e-3):
+    def __init__(self, inputDimension, outputDimension, regularization=0.0, learningRate=3e-6):
         
         # inputDimension means the number of units in the previous hidden layer, or the input size of the input layer (if that is the previous layer)
         # outputDimension also means the number of units in the current layer
@@ -74,6 +74,11 @@ class Linear():
                 
         # print("=======================Z - PROPERLY CALCULATING=========================")                 
         # print(Z)
+        
+        # print("\nFor A: {}\n {}".format(A.shape, A))
+        # print("For W: {}\n{}".format(self.W.shape, self.W))
+        # # print("For b: {}".format(self.b.shape))
+        # print("For Z: {}\n{}".format(Z.shape, Z))
                 
         return Z
     
@@ -96,17 +101,19 @@ class Linear():
         #       From L = f(Z) = f(g(W)), I can state that: [f(g(x))]' = f'(g(x)) * g'(x)  <=>  dL / dW = (dL / dZ) * (dZ / dW)  <=>  deltaW = deltaZ * (dZ / dW)
         #       Also, in the forward process I have implemented: Z = A * W + b. That is why: dZ / dW = d(A * W + b) / dW = A
         #       Conclude: deltaW = deltaZ * A
-        deltaW = np.dot(deltaZ, A.transpose) + + self.regularization * self.W
+
+        deltaW = np.dot(deltaZ, A.transpose()) + self.regularization * self.W
         
         #   deltab is the gradient of the cost with respect to the biases b of the current linear layer (dZ / db)
         #       With a similar explanation presented above, I can state that dL / db = (dL / dZ) * (dZ / db) <=> deltab = deltaZ * (dZ / db)
         #       In the forward process I have implemented: Z = A * W + b. That is why: dZ / db = d(A * W + b) / db = 1
         #       Conclude: deltab = deltaZ
-        deltab = np.sum(deltaZ, axis=0) + self.regularization * self.b
+        
+        deltab = (np.sum(deltaZ, axis=1)).reshape(-1, 1) + (self.regularization * self.b)
         
         #   dA is the gradient of the cost with respect to the input of the current linear layer (which is also the output of the previous layer)
         #       This is similar to what has happened when I caculating deltaW = dL / dA = (dL / dZ) * (dZ / dA) = deltaZ * [d(A * W + b) / dA] = deltaZ * W
-        deltaA = np.dot(self.W.transpose, deltaZ)
+        deltaA = np.dot(self.W.transpose(), deltaZ)
         
         # It can be easily duduced that deltaZ, deltaW, deltab, and deltaA have the same shape as Z, W, b, and A respectively.
         # So we simply use the numpy.transpose effectively before multiplicating the matrices to make sure that all of those required output have the precise shape. 
@@ -116,9 +123,20 @@ class Linear():
         #   Previous layer's number of units: n^[l-1] = 2
         #   => deltaZ.shape = (2, 4), deltaW.shape = (2, 3), deltab.shape = (3, 1)
         
+        # print("Back deltaZ: {}".format(deltaZ.shape))
+        # #print("Back deltaZ: {}".format(deltaZ))
+        # print("Back deltaW: {}".format(deltaW.shape))
+        # print("Back deltab: {}".format(deltab.shape))
+        # print("Back deltaA: {}\n".format(deltaA.shape))
+        #print("Back deltaA: {}\n".format(deltaA))
+        
+        # print("Back W before updating: {}".format(self.W))
+        
         # Update the weights and biases (Gradient descent)
         self.W -= self.learingRate * deltaW
         self.b -= self.learingRate * deltab
+        
+        # print("Back W after updating: {}".format(self.W))
         
         return (deltaA, deltaW, deltab)
     
@@ -135,7 +153,7 @@ class ReLU():
     def forward(self, A):
 
         # Cache is stored for computing the backward pass efficiently
-        self.cache = (A, 1)
+        self.cache = A
         
         # ReLU activation function is stated: f(x) = max(0, x)
         
@@ -152,7 +170,7 @@ class ReLU():
         # deltaZ is the gradient of the cost with respect to the output of this ReLU layer (dL / dZ)
         
         # Get the previous input
-        A = self.cache[0]
+        A = self.cache
         
         # Given that g(x) is ReLU activation function, g'(x) means:
         #   If x < 0, g'(x) = 0
@@ -188,11 +206,11 @@ class Sigmoid():
     def forward(self, A):
         
         # Cache is stored for computing the backward pass efficiently
-        self.cache = (A, 1)
+        self.cache = A
         
         Z = 1 / (1 + np.exp(-A))
         
-        return Z
+        return np.array(Z)
     
     def backward(self, deltaZ):
         
@@ -202,32 +220,73 @@ class Sigmoid():
         # Calculate the gradient of the output with the respect to this Sigmoid layer's input (dZ / dA):
         gradientZToA = np.exp(-A) / ((1 + np.exp(-A)) ** 2)
         
-        # deltaA is the gradient of the cost with respect to the input of this ReLU layer (dL / dA)
+        # deltaA is the gradient of the cost with respect to the input of this Sigmoid layer (dL / dA)
         # Using the chain rule, it is easy to see that: dL / dA = (dL / dZ) * (dZ / dA) = deltaZ * gradientZToA
         deltaA = deltaZ * gradientZToA
         
         return deltaA
+
+# ===============================================================================================================================
+# GAUSSIAN ACTIVATION FUNCTION CLASS
+class Gaussian():
     
+    def __init__(self):
+        self.cache = None
+        
+    def __str__(self):
+        return "Gaussian"
+    
+    def forward(self, A):
+
+        # Cache is stored for computing the backward pass efficiently
+        self.cache = A
+        
+        # ReLU activation function is stated: f(x) = e^(-x^2)
+        
+        # Calculate the output of this ReLU layer
+        Z = np.exp(-A**2)
+        
+        # print("===================================Z===================================")
+        # print(Z)
+        
+        return Z
+    
+    def backward(self, deltaZ):
+        
+        # Get the previous input
+        A = self.cache
+
+        # Calculate the gradient of the output with the respect to this Gaussian layer's input (dZ / dA):
+        gradientZToA = -2 * A * np.exp(-A**2)
+        
+        # deltaA is the gradient of the cost with respect to the input of this Gaussian layer (dL / dA)
+        # Using the chain rule, it is easy to see that: dL / dA = (dL / dZ) * (dZ / dA) = deltaZ * gradientZToA
+        deltaA = deltaZ * gradientZToA
+        
+        return deltaA
+  
 # ===============================================================================================================================
 # CLASS FOR LAYER THAT COMBINES LINEAR LAYER AND ACTIVATION-FUNCTION LAYER
 class StandardLayer():
     
-    def __init__(self, inputDimension, outputDimension, learningRate, activationFunction):
+    def __init__(self, inputDimension, outputDimension, learningRate, regularization, activationFunction):
         
-        self.linearLayer = Linear(inputDimension, outputDimension, learningRate)
+        self.linearLayer = Linear(inputDimension=inputDimension, outputDimension=outputDimension, learningRate=learningRate, regularization=regularization)
         
         self.activationFunctionLayer = None
         if (activationFunction == "ReLU"):
             self.activationFunctionLayer = ReLU()
         elif (activationFunction == "Sigmoid"):
             self.activationFunctionLayer = Sigmoid()
+        elif (activationFunction == "Gaussian"):
+            self.activationFunctionLayer = Gaussian()
         else:
             print("Activation Function {} is not defined. ReLU function is registered instead.".format(activationFunction))
             self.activationFunctionLayer = ReLU()    
             
     def forward(self, A):
         
-        hidden = self.linearLayer.forward(X)
+        hidden = self.linearLayer.forward(A)
         Z = self.activationFunctionLayer.forward(hidden)
         
         return Z      
@@ -258,9 +317,11 @@ class BinaryCrossEntropy():
         
         # Binary Cross Entropy formula:
         # J = (-1 / m) * [(y_1 * log(a_1) + (1 - y_1) * log (1 - a_1)) + (y_2 * log(a_2) + (1 - y_2) * log (1 - a_2)) + ... + (y_m * log(a_m) + (1 - y_m) * log (1 - a_m))]
-        cost = (-1 / m) * (np.dot(labels, np.log(scores).transpose) + np.dot((1 - labels), np.log(1 - scores).transpose))
+        cost = (np.dot(labels, np.log(scores).transpose()) + np.dot((1 - labels), np.log(1 - scores).transpose()))
+
+        cost *= (-1. / numberOfExamples)
         
-        return cost
+        return cost[0]
     
     def backward(self, labels):
         
@@ -277,10 +338,10 @@ class BinaryCrossEntropy():
         costGradient = 0.
         for i in range(0, min(len(scores), len(labels))):
             costGradient += ((labels[i] - scores[i]) / (scores[i] * (1 - scores[i])))
-        
+            
         costGradient *= (-1. / numberOfExamples)
         
-        return costGradient
+        return np.array([costGradient])
             
         
     

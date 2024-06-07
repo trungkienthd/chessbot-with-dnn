@@ -11,12 +11,12 @@ class RandomBot(Bot):
         self.thinkingTime = 1.
         
     def __str__(self):
-        return "Random Bot"
+        return "RandomBot"
     
     def perform(self):
         randomMove = random.choice(self.chess.getPossibleMoves())
         try:
             self.chess.makeAMove(moveToString=randomMove)
         except:
-            print("Failed to perform random move {}: {} ".format(randomMove, sys.exc_info()[0]))
+            print("Failed to perform random move {}: {} ".format(randomMove, sys.exc_info()))
             

@@ -25,7 +25,7 @@ class Chess():
                 print("Move {} performed successfully.".format(moveToString))
                 # print("Current board's FEN: {}".format(self.board.fen()))
             except:
-                print("Failed to perform move {}: {}".format(moveToString, sys.exc_info()[0]))
+                print("Failed to perform move {}: {}".format(moveToString, sys.exc_info()))
         else:
             print("Invalid move: " + moveCode)
             

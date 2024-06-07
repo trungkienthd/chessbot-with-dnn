@@ -53,7 +53,7 @@ class Game():
                 for yIndex in range(0, len(boardToCode[xIndex])):
                     self.board.boxes[xIndex][yIndex].setBoxPieceSprite(pieceCode=boardToCode[xIndex][yIndex])
         except:
-            print("FAILED TO CONVERT BOARD'S CODES TO IMAGES: {}".format(sys.exc_info()[0]))
+            print("FAILED TO CONVERT BOARD'S CODES TO IMAGES: {}".format(sys.exc_info()))
                 
         self.board.update(delta)
         window.updateLabel("bot's thinking timer", "ETA Thinking time: {} secs.".format((self.bot.thinkingTime - self.botThinkingTimer), ".2f"))

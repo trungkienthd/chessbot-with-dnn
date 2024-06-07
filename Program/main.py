@@ -3,6 +3,7 @@ import pyglet
 
 import game
 from deepLearningAI.training.dataProcessing import DataGenerator
+from deepLearningAI.training.training import Trainer
 
 def play():
     game.game = game.Game()
@@ -10,18 +11,32 @@ def play():
     pyglet.app.run()
     
 if __name__ == '__main__':  
+    print("================================================================================================================================================")
+    print("================================================================================================================================================")
+    print("================================================================================================================================================")
+    print()
     if len(sys.argv) >= 2:  
         if len(sys.argv) == 5 and sys.argv[1] == "generateData":
-            try:
-                numberOfSimulations = int.Parse(sys.argv[4])
+            # E.g. ""
+            # try:
+                numberOfSimulations = (int)(sys.argv[4])
                 data = DataGenerator(whiteBot=sys.argv[2], blackBot=sys.argv[3], numberOfSimulations=1)
-            except:
-                print("Unable to generate data: {}".format(sys.exc_info()[0]))
-                play()
-        elif len(sys.argv) == 3 and sys.argv[1] == "train":
-            return
+            # except:
+            #     print("Unable to generate data: {}. The game will start instead".format(sys.exc_info()))
+            #     play()
+        elif len(sys.argv) == 5 and sys.argv[1] == "train":
+            # E.g. "python main.py train 1_Simulations_Of_White_RandomBot_VS_Black_RandomBot ReLU 1"
+            # try:
+                dataFileName = sys.argv[2]
+                activationFunctionsOfHiddenLayers = sys.argv[3]
+                numberOfEpoches = (int)(sys.argv[4])
+                
+                trainer = Trainer(dataFileName=dataFileName, activationFunctionsOfHiddenLayers=activationFunctionsOfHiddenLayers, numberOfEpoches=numberOfEpoches)
+            # except:
+            #     print("Unable to train Neural network: {}. The game will start instead".format(sys.exc_info()))
+            #     play()
         else:
-            print("System arguments are not defined! The game will start instead")
+            print("System arguments are not defined. The game will start instead")
             play()
     else:
         play()

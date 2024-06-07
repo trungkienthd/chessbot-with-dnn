@@ -6,7 +6,9 @@ from deepLearningAI.deepNeuralNetwork.layers import StandardLayer, BinaryCrossEn
 
 class NeuralNetwork():
     
-    def __init__(self, inputDimension, hiddenDimensions=[], outputDimension=1, learningRate=3e-3, activationFunctions=[None]):
+    def __init__(self, inputDimension, hiddenDimensions=[], outputDimension=1, learningRate=3e-6, regularization=0.01, activationFunctions=[None]):
+        
+        np.set_printoptions(threshold=np.inf)
         
         self.dimensions = [inputDimension] + hiddenDimensions
         
@@ -18,10 +20,10 @@ class NeuralNetwork():
         # Initialize the hidden layers
         self.hiddenLayers = []
         for i in range(0, len(hiddenDimensions)):
-            self.hiddenLayers.append(StandardLayer(inputDimension=self.dimensions[i], outputDimension=self.dimensions[i + 1], learningRate=learningRate, activationFunction=activationFunctions[i]))
+            self.hiddenLayers.append(StandardLayer(inputDimension=self.dimensions[i], outputDimension=self.dimensions[i + 1], learningRate=learningRate, regularization=regularization, activationFunction=activationFunctions[i]))
             
         # Initialize the final layer
-        self.finalLayer = StandardLayer(inputDimension=self.dimensions[i+1], outputDimension=outputDimension, learningRate=learningRate, activationFunction=activationFunctions[-1])
+        self.finalLayer = StandardLayer(inputDimension=self.dimensions[-1], outputDimension=outputDimension, learningRate=learningRate, regularization=regularization, activationFunction=activationFunctions[-1])
         
         # Initialize the cost function
         self.costFunction = BinaryCrossEntropy()
@@ -35,11 +37,11 @@ class NeuralNetwork():
         print(" - {} Hidden layers".format(len(self.hiddenLayers)))
         for i in range(0, len(self.hiddenLayers)):
             print("     + Hidden layer {}: {} units, with {} activation function".format(i + 1, self.hiddenLayers[i].linearLayer.numberOfUnits, self.hiddenLayers[i].activationFunctionLayer))
-        print(" - An Output layer with {} units - {} activation function".format(self.finalLayer.linearLayer.numberOfUnits, self.finalLayer.activationFunctionLayer))
+        print(" - An Output layer with {} units - {} activation function\n".format(self.finalLayer.linearLayer.numberOfUnits, self.finalLayer.activationFunctionLayer))
         
     def updateLearningRate(self, value):
         
-        for layer in self.layers:
+        for layer in self.hiddenLayers:
             layer.linear.learningRate = value
             
         self.finalLayer.learningRate = value
@@ -48,7 +50,7 @@ class NeuralNetwork():
         
         # Forward pass through the hidden layers
         hidden = X
-        for layer in self.layers:
+        for layer in self.hiddenLayers:
             hidden = layer.forward(hidden)
             
         # scores is the output of the forward propagation (prediction values)
@@ -60,11 +62,21 @@ class NeuralNetwork():
         
         # Forward pass through the hidden layers
         hidden = X
-        for layer in self.layers:
+        for layer in self.hiddenLayers:
             hidden = layer.forward(hidden)
             
+            # print("\n========================================================================")
+            # print("Hidden")
+            # print("     Shape: {}".format(hidden.shape))
+            # print("     Values: {}".format(hidden))
+                
         # scores is the output of the forward propagation (prediction values)
         scores = self.finalLayer.forward(hidden)
+        
+        # print("\n========================================================================")
+        # print("Scores")
+        # print("     Shape: {}".format(scores.shape))
+        # print("     Values: {}".format(scores))
         
         # Calculate the cost
         cost = self.costFunction.forward(scores=scores, labels=labels)
@@ -78,8 +90,8 @@ class NeuralNetwork():
             (deltaAL, _, _) = self.finalLayer.backward(deltaAL)
             
             #   Backward pass to the remaining layers
-            for i in range(len(self.layers) - 1, -1, -1):
-                (deltaAL, _, _) = self.layers[i].backward(deltaAL)
+            for i in range(len(self.hiddenLayers) - 1, -1, -1):
+                (deltaAL, _, _) = self.hiddenLayers[i].backward(deltaAL)
             
         return cost
     

@@ -121,7 +121,8 @@ class DataGenerator():
         
         for i in range(0, numberOfSimulations):
             self.simulate()
-            
+           
+        self.minMaxScaling() 
         self.data.to_csv("./deepLearningAI/data/{}_Simulations_Of_White_{}_VS_Black_{}.csv".format(numberOfSimulations, self.whiteRandomBot, self.blackRandomBot), index=False)
         self.printData()
         
@@ -153,6 +154,22 @@ class DataGenerator():
             self.data.loc[len(self.data)] = np.concatenate((self.boardEncoder.initializeEncodedFenArray(), np.array([score])))   
             print(" => Score: {}".format(score))      
             
+    def minMaxScaling(self):
+        # Copy the dataframe to avoid changing the original data
+        scaledData = self.data.copy()
+        
+        # Min-Max Scaling (Normalization) rescales the data to a fixed range, typically 0 to 1, or -1 to 1; using the following formula:
+        # X_norm = (X - X_min) / (X_max - X_min)
+        
+        # Apply Min-Max Scaling to each column
+        for column in self.data.columns:
+            minColumn = self.data[column].min()
+            maxColumn = self.data[column].max()
+            scaledData[column] = (self.data[column] - minColumn) / (maxColumn - minColumn)
+            
+        self.data = scaledData
+        
+            
     def stockfish(self, board):
         with chess.engine.SimpleEngine.popen_uci('./deepLearningAI/training/stockfish/stockfish-windows-x86-64-avx2.exe') as sf:
             result = sf.analyse(board, chess.engine.Limit(time=0.1))
@@ -161,5 +178,5 @@ class DataGenerator():
                     
     def printData(self):
         print("\n=======================================================================================")
-        print("Data generated when simulating a match between {} (White) and {} (Black):".format(self.whiteRandomBot, self.blackRandomBot))
+        print("Data generated when simulating a match between {} (White) and {} (Black), after applying Min-Max Scaling:".format(self.whiteRandomBot, self.blackRandomBot))
         print(self.data)

@@ -73,3 +73,5 @@ crashlytics-build.properties
 
 wcc_env
 __pycache__
+Program/chessManager/__pycache__
+Program/chessBots/__pycache__
