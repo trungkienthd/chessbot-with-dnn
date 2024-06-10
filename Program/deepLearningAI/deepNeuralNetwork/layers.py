@@ -10,8 +10,8 @@ class Linear():
         # outputDimension also means the number of units in the current layer
         self.numberOfUnits = outputDimension
         
-        self.W = np.random.rand(outputDimension, inputDimension) * 0.1
-        self.b = np.zeros((outputDimension, 1))
+        self.W = np.random.rand(outputDimension, inputDimension) - 0.5
+        self.b = np.random.rand(outputDimension, 1) - 0.5
         
         self.cache = None
         
@@ -31,6 +31,7 @@ class Linear():
         
         # Calculate simply using numpy matrix multiplication:
         Z = np.dot(self.W, A) + self.b
+        
         # print("=========================Z - SIMPLE CALCULATING=========================")
         # print(Z)
         
@@ -74,11 +75,6 @@ class Linear():
                 
         # print("=======================Z - PROPERLY CALCULATING=========================")                 
         # print(Z)
-        
-        # print("\nFor A: {}\n {}".format(A.shape, A))
-        # print("For W: {}\n{}".format(self.W.shape, self.W))
-        # # print("For b: {}".format(self.b.shape))
-        # print("For Z: {}\n{}".format(Z.shape, Z))
                 
         return Z
     
@@ -109,7 +105,9 @@ class Linear():
         #       In the forward process I have implemented: Z = A * W + b. That is why: dZ / db = d(A * W + b) / db = 1
         #       Conclude: deltab = deltaZ
         
-        deltab = (np.sum(deltaZ, axis=1)).reshape(-1, 1) + (self.regularization * self.b)
+        deltab = (np.sum(deltaZ, axis=1))
+        deltab = deltab.reshape((deltab.shape[0], 1))
+        deltab += (self.regularization * self.b)
         
         #   dA is the gradient of the cost with respect to the input of the current linear layer (which is also the output of the previous layer)
         #       This is similar to what has happened when I caculating deltaW = dL / dA = (dL / dZ) * (dZ / dA) = deltaZ * [d(A * W + b) / dA] = deltaZ * W
@@ -334,7 +332,7 @@ class BinaryCrossEntropy():
         
         numberOfExamples = scores.shape[0]
         
-        # deltaAL is the gradient of the cost with respect to AL
+        # deltaAL is the gradient of the cost with respect to scores
         costGradient = 0.
         for i in range(0, min(len(scores), len(labels))):
             costGradient += ((labels[i] - scores[i]) / (scores[i] * (1 - scores[i])))

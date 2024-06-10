@@ -5,20 +5,21 @@ import chess
 import chess.engine
 
 from chessManager.chess import Chess
-from chessBots.randomBot import RandomBot
+
+from chessBots.bot import Bot
 
 PIECE_TO_VALUE = {
         chess.PAWN: 1, chess.KNIGHT: 2, chess.BISHOP: 3, chess.ROOK: 4, chess.QUEEN: 5, chess.KING: 6,
         -chess.PAWN: -1, -chess.KNIGHT: -2, -chess.BISHOP: -3, -chess.ROOK: -4, -chess.QUEEN: -5, -chess.KING: -6
     }
 
-class BoardEncoder():
+class ChessStateEncoder():
     
     def __init__(self, board):
         self.board = board
         
         self.encodedFenArray = None
-        self.initializeEncodedFenArray()
+        # self.initializeEncodedFenArray()
         
     def initializeEncodedFenArray(self):
         # BOARD STATE FEATURES
@@ -64,12 +65,36 @@ class BoardEncoder():
                                 + [encodedHalfmoveClock]
                                 + [encodedFullmoveNumber])
         
-        print(self.encodedFenArray)
+        # print(self.encodedFenArray)
         self.encodedFenArray = np.array(self.encodedFenArray)
         
-        self.printEncodedFEN(boardStateMatrix=boardStateMatrix)
+        # self.printEncodedFEN(boardStateMatrix=boardStateMatrix)
         
         return self.encodedFenArray
+    
+    # A positive score <=> “White is likely winning” 
+    # A negative socre <=> “Black is likely winning”.
+    def evaluateWithStockfish(self):
+        score = 0
+        with chess.engine.SimpleEngine.popen_uci('./deepLearningAI/training/stockfish/stockfish-windows-x86-64-avx2.exe') as sf:
+            result = sf.analyse(self.board, chess.engine.Limit(time=0.1))
+            score = result['score'].white().score()
+            
+            # Handling None value
+            if score is None:
+                score = 0
+                
+        return score
+        
+    # Create Record of Encoded board's state and its Evaluation    
+    def createDataRecord(self):
+        score = self.evaluateWithStockfish()
+            
+        record =  np.concatenate((self.initializeEncodedFenArray(), np.array([score])))     
+        
+        # print(" => Score: {}\n".format(score))   
+        
+        return record
         
     def printEncodedFEN(self, boardStateMatrix):
         print("\n=======================================================================================")
@@ -97,12 +122,12 @@ class DataGenerator():
         
         self.chess = Chess()
         
-        self.whiteRandomBot = self.initializeBot(botName=whiteBot)
-        self.blackRandomBot = self.initializeBot(botName=blackBot)
+        self.whiteRandomBot = Bot.initializeBot(botName=whiteBot, playerIndex=1)
+        self.blackRandomBot = Bot.initializeBot(botName=blackBot, playerIndex=-1)
         
         self.turn = "White"
         
-        self.boardEncoder = BoardEncoder(self.chess.board)
+        self.chessStateEncoder = ChessStateEncoder(self.chess.board)
         
         self.data = pd.DataFrame(columns=["A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8",
                                           "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",
@@ -122,22 +147,15 @@ class DataGenerator():
         for i in range(0, numberOfSimulations):
             self.simulate()
            
-        self.minMaxScaling() 
+        self.data, _, _ = DataGenerator.minMaxScaling(data=self.data)  
         self.data.to_csv("./deepLearningAI/data/{}_Simulations_Of_White_{}_VS_Black_{}.csv".format(numberOfSimulations, self.whiteRandomBot, self.blackRandomBot), index=False)
         self.printData()
-        
-    def initializeBot(self, botName="Random"):
-        if botName == "Random":
-            return RandomBot(chess=self.chess)
-        else:
-            print("\nBot {} is not defined. The Random bot is initialize instead.".format(botName))
-            return RandomBot(chess=self.chess)
         
     def simulate(self):
         self.chess = Chess()
         self.whiteRandomBot.chess = self.chess
         self.blackRandomBot.chess = self.chess
-        self.boardEncoder = BoardEncoder(self.chess.board)
+        self.chessStateEncoder = ChessStateEncoder(self.chess.board)
         
         while not self.chess.board.is_game_over():
             if self.turn == "White":
@@ -147,36 +165,47 @@ class DataGenerator():
                 self.blackRandomBot.perform()
                 self.turn = "White"
             
-            score = self.stockfish(board=self.chess.board)  
-            # Handling None value
-            if score is None:
-                score = 0
-            self.data.loc[len(self.data)] = np.concatenate((self.boardEncoder.initializeEncodedFenArray(), np.array([score])))   
-            print(" => Score: {}".format(score))      
-            
-    def minMaxScaling(self):
-        # Copy the dataframe to avoid changing the original data
-        scaledData = self.data.copy()
-        
-        # Min-Max Scaling (Normalization) rescales the data to a fixed range, typically 0 to 1, or -1 to 1; using the following formula:
-        # X_norm = (X - X_min) / (X_max - X_min)
-        
-        # Apply Min-Max Scaling to each column
-        for column in self.data.columns:
-            minColumn = self.data[column].min()
-            maxColumn = self.data[column].max()
-            scaledData[column] = (self.data[column] - minColumn) / (maxColumn - minColumn)
-            
-        self.data = scaledData
-        
-            
-    def stockfish(self, board):
-        with chess.engine.SimpleEngine.popen_uci('./deepLearningAI/training/stockfish/stockfish-windows-x86-64-avx2.exe') as sf:
-            result = sf.analyse(board, chess.engine.Limit(time=0.1))
-            score = result['score'].white().score()
-            return score
+            self.data.loc[len(self.data)] = self.chessStateEncoder.createDataRecord()
                     
     def printData(self):
         print("\n=======================================================================================")
         print("Data generated when simulating a match between {} (White) and {} (Black), after applying Min-Max Scaling:".format(self.whiteRandomBot, self.blackRandomBot))
         print(self.data)
+    
+    @staticmethod
+    def minMaxScaling(data):
+        # Copy the dataframe to avoid changing the original data
+        scaledData = data.copy()
+        
+        minColumnValues = {}
+        maxColumnValues = {}
+        
+        # Min-Max Scaling (Normalization) rescales the data to a fixed range, typically 0 to 1, or -1 to 1; using the following formula:
+        # X_norm = (X - X_min) / (X_max - X_min)
+        
+        # Apply Min-Max Scaling to each column
+        for column in data.columns:
+            minColumnValues[column] = data[column].min()
+            maxColumnValues[column] = data[column].max()
+            
+            minmaxRangeValue = maxColumnValues[column] - minColumnValues[column]
+            # Avoid division by 0 by using np.where to replace zero values in minmaxRangeValue with 1 
+            minmaxRangeValue = np.where(minmaxRangeValue == 0, 1, minmaxRangeValue)
+            
+            scaledData[column] = (data[column] - minColumnValues[column]) / (minmaxRangeValue)
+            
+        return scaledData, minColumnValues, maxColumnValues
+    
+    @staticmethod
+    def minMaxDescaling(scaledData, minColumnValues, maxColumnValues):
+        # minColumnValues (dict): Dictionary containing the minimum values for each column used during scaling.
+        # maxColumnValues (dict): Dictionary containing the maximum values for each column used during scaling.
+        
+        originalData = scaledData.copy()
+        for column in scaledData.columns:
+            minmaxRangeValue = maxColumnValues[column] - minColumnValues[column]
+            minmaxRangeValue = np.where(minmaxRangeValue == 0, 1, minmaxRangeValue)
+            
+            originalData[column] = scaledData[column] * minmaxRangeValue + minColumnValues[column]
+
+        return originalData

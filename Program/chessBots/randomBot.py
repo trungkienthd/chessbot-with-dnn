@@ -1,9 +1,9 @@
 import sys
 import random
 
-from chessBots.bot import Bot
+import chessBots.bot
 
-class RandomBot(Bot):
+class RandomBot(chessBots.bot.Bot):
     
     def __init__(self, chess=None):
         super().__init__(chess=chess)

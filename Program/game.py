@@ -6,13 +6,15 @@ from chessManager.point2d import Point2D
 from chessManager.board import Board
 from chessManager.chess import Chess
 from chessBots.randomBot import RandomBot
+from chessBots.deepLearningBot import DeepLearningBot
 
 class Game():
     def __init__(self):
         self.chess = Chess()
         self.board = Board(chess=self.chess, boardSize=640., boardOffset=Point2D(80., 80.), firstColor="BLUE", secondColor="WHITE")
         
-        self.bot = RandomBot(chess=self.chess)
+        # self.bot = RandomBot(chess=self.chess)
+        self.bot = DeepLearningBot(chess=self.chess, playerIndex=-1)
         
         self.turn = "Player"
         self.botThinkingTimer = 0.

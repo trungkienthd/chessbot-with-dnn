@@ -30,6 +30,14 @@ class Chess():
             print("Invalid move: " + moveCode)
             
         return
+    
+    def unmakeAMove(self):
+        try:
+            self.board.pop()
+            print("\n=======================================================================================")
+            print("Last move has been unmade successfully.")
+        except:
+            print("Failed to unmake the last move: {}".format(sys.exc_info()))
 
     def extractFEN(self):
         rows = self.board.fen().split(" ")[0].split("/")

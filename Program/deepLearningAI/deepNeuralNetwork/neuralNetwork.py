@@ -37,7 +37,11 @@ class NeuralNetwork():
         print(" - {} Hidden layers".format(len(self.hiddenLayers)))
         for i in range(0, len(self.hiddenLayers)):
             print("     + Hidden layer {}: {} units, with {} activation function".format(i + 1, self.hiddenLayers[i].linearLayer.numberOfUnits, self.hiddenLayers[i].activationFunctionLayer))
+            print("         Weights: {} \n{}".format(self.hiddenLayers[i].linearLayer.W.shape, self.hiddenLayers[i].linearLayer.W))
+            print("         Biases: {} \n{}".format(self.hiddenLayers[i].linearLayer.b.shape, self.hiddenLayers[i].linearLayer.b))
         print(" - An Output layer with {} units - {} activation function\n".format(self.finalLayer.linearLayer.numberOfUnits, self.finalLayer.activationFunctionLayer))
+        print("     Weights: {} \n{}".format(self.finalLayer.linearLayer.W.shape, self.finalLayer.linearLayer.W))
+        print("     Biases: {} \n{}".format(self.finalLayer.linearLayer.b.shape, self.finalLayer.linearLayer.b))
         
     def updateLearningRate(self, value):
         
@@ -53,10 +57,20 @@ class NeuralNetwork():
         for layer in self.hiddenLayers:
             hidden = layer.forward(hidden)
             
+            # print("\n========================================================================")
+            # print("Hidden")
+            # print("     Shape: {}".format(hidden.shape))
+            # print("     Values: {}".format(hidden))
+            
         # scores is the output of the forward propagation (prediction values)
         scores = self.finalLayer.forward(hidden)
         
-        return np.argmax(scores, axis=1)
+        # print("\n========================================================================")
+        # print("Scores")
+        # print("     Shape: {}".format(scores.shape))
+        # print("     Values: {}".format(scores))
+        
+        return scores.flatten()
     
     def forward(self, X, labels, training=True):
         
@@ -93,7 +107,7 @@ class NeuralNetwork():
             for i in range(len(self.hiddenLayers) - 1, -1, -1):
                 (deltaAL, _, _) = self.hiddenLayers[i].backward(deltaAL)
             
-        return cost
+        return scores, cost
     
     @staticmethod
     def save(model, modelFileName="model.pickle"):
