@@ -8,18 +8,14 @@ from chessManager.chess import Chess
 
 from chessBots.bot import Bot
 
-PIECE_TO_VALUE = {
-        chess.PAWN: 1, chess.KNIGHT: 2, chess.BISHOP: 3, chess.ROOK: 4, chess.QUEEN: 5, chess.KING: 6,
-        -chess.PAWN: -1, -chess.KNIGHT: -2, -chess.BISHOP: -3, -chess.ROOK: -4, -chess.QUEEN: -5, -chess.KING: -6
-    }
-
 class ChessStateEncoder():
     
-    def __init__(self, board):
+    def __init__(self, board, isPrintedOutput=True):
         self.board = board
         
         self.encodedFenArray = None
-        # self.initializeEncodedFenArray()
+        
+        self.isPrintedOutput = isPrintedOutput
         
     def initializeEncodedFenArray(self):
         # BOARD STATE FEATURES
@@ -29,7 +25,7 @@ class ChessStateEncoder():
             piece = self.board.piece_at(i)
             if piece:
                 color_multiplier = 1 if piece.color == chess.WHITE else -1
-                boardStateMatrix[i // 8, i % 8] = color_multiplier * PIECE_TO_VALUE[piece.piece_type]
+                boardStateMatrix[i // 8, i % 8] = color_multiplier * piece.piece_type
                 
         boardStateVector = []
         for file in boardStateMatrix:
@@ -65,10 +61,12 @@ class ChessStateEncoder():
                                 + [encodedHalfmoveClock]
                                 + [encodedFullmoveNumber])
         
-        # print(self.encodedFenArray)
+        if self.isPrintedOutput:
+            print(self.encodedFenArray)
+        
         self.encodedFenArray = np.array(self.encodedFenArray)
         
-        # self.printEncodedFEN(boardStateMatrix=boardStateMatrix)
+        self.printEncodedFEN(boardStateMatrix=boardStateMatrix)
         
         return self.encodedFenArray
     
@@ -92,29 +90,31 @@ class ChessStateEncoder():
             
         record =  np.concatenate((self.initializeEncodedFenArray(), np.array([score])))     
         
-        # print(" => Score: {}\n".format(score))   
+        if self.isPrintedOutput:
+            print(" => Score: {}\n".format(score))   
         
         return record
         
     def printEncodedFEN(self, boardStateMatrix):
-        print("\n=======================================================================================")
-        print("FEN '{}' has been encoded:".format(self.board.fen()))
-        print("     ------------------------------------------------------------------------")
-        for i in range(0, len(boardStateMatrix)):
-            print("     Board state - File {}:   {}".format(chr(i + 65), ["{:+.0f}".format(number) for number in boardStateMatrix[i]]))
-        print("     ------------------------------------------------------------------------")
-        print("     Active player (w/b):    {}".format(self.encodedFenArray[-6]))
-        print("     ------------------------------------------------------------------------")
-        print("     Castiling availability: {}".format(self.encodedFenArray[-7:-3]))
-        print("     ------------------------------------------------------------------------")
-        print("     En passant Target:      {}".format(self.encodedFenArray[-3]))
-        print("     ------------------------------------------------------------------------")
-        print("     Halfmove Clock:         {}".format(self.encodedFenArray[-2]))
-        print("     ------------------------------------------------------------------------")
-        print("     Fullmove number:        {}".format(self.encodedFenArray[-1]))
-        print("     ------------------------------------------------------------------------")
-        
-        print(" => Encoded FEN Array: {} ({} elements)".format(self.encodedFenArray, len(self.encodedFenArray)))
+        if self.isPrintedOutput:
+            print("\n=======================================================================================")
+            print("FEN '{}' has been encoded:".format(self.board.fen()))
+            print("     ------------------------------------------------------------------------")
+            for i in range(0, len(boardStateMatrix)):
+                print("     Board state - File {}:   {}".format(chr(i + 65), ["{:+.0f}".format(number) for number in boardStateMatrix[i]]))
+            print("     ------------------------------------------------------------------------")
+            print("     Active player (w/b):    {}".format(self.encodedFenArray[-6]))
+            print("     ------------------------------------------------------------------------")
+            print("     Castiling availability: {}".format(self.encodedFenArray[-7:-3]))
+            print("     ------------------------------------------------------------------------")
+            print("     En passant Target:      {}".format(self.encodedFenArray[-3]))
+            print("     ------------------------------------------------------------------------")
+            print("     Halfmove Clock:         {}".format(self.encodedFenArray[-2]))
+            print("     ------------------------------------------------------------------------")
+            print("     Fullmove number:        {}".format(self.encodedFenArray[-1]))
+            print("     ------------------------------------------------------------------------")
+            
+            print(" => Encoded FEN Array: {} ({} elements)".format(self.encodedFenArray, len(self.encodedFenArray)))
 
 class DataGenerator():
     
@@ -122,12 +122,12 @@ class DataGenerator():
         
         self.chess = Chess()
         
-        self.whiteRandomBot = Bot.initializeBot(botName=whiteBot, playerIndex=1)
-        self.blackRandomBot = Bot.initializeBot(botName=blackBot, playerIndex=-1)
+        self.whiteBot = Bot.initializeBot(chess=self.chess, botName=whiteBot, playerIndex=1)
+        self.blackBot = Bot.initializeBot(chess=self.chess, botName=blackBot, playerIndex=-1)
         
         self.turn = "White"
         
-        self.chessStateEncoder = ChessStateEncoder(self.chess.board)
+        self.chessStateEncoder = ChessStateEncoder(board=self.chess.board, isPrintedOutput=True)
         
         self.data = pd.DataFrame(columns=["A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8",
                                           "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",
@@ -144,32 +144,33 @@ class DataGenerator():
                                           "Fullmove Number",
                                           "Who is winning"])
         
-        for i in range(0, numberOfSimulations):
+        self.numberOfSimulations = numberOfSimulations
+        for i in range(0, self.numberOfSimulations):
             self.simulate()
            
         self.data, _, _ = DataGenerator.minMaxScaling(data=self.data)  
-        self.data.to_csv("./deepLearningAI/data/{}_Simulations_Of_White_{}_VS_Black_{}.csv".format(numberOfSimulations, self.whiteRandomBot, self.blackRandomBot), index=False)
+        self.data.to_csv("./deepLearningAI/data/{}_Simulations_Of_White_{}_VS_Black_{}.csv".format(numberOfSimulations, self.whiteBot, self.blackBot), index=False)
         self.printData()
         
     def simulate(self):
         self.chess = Chess()
-        self.whiteRandomBot.chess = self.chess
-        self.blackRandomBot.chess = self.chess
+        self.whiteBot.chess = self.chess
+        self.blackBot.chess = self.chess
         self.chessStateEncoder = ChessStateEncoder(self.chess.board)
         
         while not self.chess.board.is_game_over():
             if self.turn == "White":
-                self.whiteRandomBot.perform()
+                self.whiteBot.perform()
                 self.turn = "Black"
             elif self.turn == "Black":
-                self.blackRandomBot.perform()
+                self.blackBot.perform()
                 self.turn = "White"
             
             self.data.loc[len(self.data)] = self.chessStateEncoder.createDataRecord()
                     
     def printData(self):
         print("\n=======================================================================================")
-        print("Data generated when simulating a match between {} (White) and {} (Black), after applying Min-Max Scaling:".format(self.whiteRandomBot, self.blackRandomBot))
+        print("Data generated when simulating a match between {} (White) and {} (Black), after applying Min-Max Scaling:".format(self.whiteBot, self.blackBot))
         print(self.data)
     
     @staticmethod

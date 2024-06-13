@@ -18,11 +18,11 @@ class Bot():
             from chessBots.randomBot import RandomBot
             
             return RandomBot(chess=chess)
-        elif botname.startwith("DeepLearning_") and len(botName) > 13:
+        elif botName.startswith("DeepLearning_") and len(botName) > 13:
             from chessBots.deepLearningBot import DeepLearningBot
             
             deepLearningModelFileName = botName[13:]
-            return deepLearningBot.DeepLearningBot(chess=chess, playerIndex=playerIndex)
+            return DeepLearningBot(chess=chess, playerIndex=playerIndex, modelFileName=deepLearningModelFileName)
             
         else:
             print("\nBot {} is not defined. The Random bot is initialize instead.".format(botName))

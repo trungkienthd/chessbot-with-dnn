@@ -9,12 +9,12 @@ from chessBots.randomBot import RandomBot
 from chessBots.deepLearningBot import DeepLearningBot
 
 class Game():
-    def __init__(self):
+    def __init__(self, modelFileName="ModelDataFile-'1_Simulations_Of_White_RandomBot_VS_Black_RandomBot'__HiddenLayersActivationFunction-'ReLU'__Epoches-'150'__MiniBatchGD-'64'.pickle"):
         self.chess = Chess()
         self.board = Board(chess=self.chess, boardSize=640., boardOffset=Point2D(80., 80.), firstColor="BLUE", secondColor="WHITE")
         
         # self.bot = RandomBot(chess=self.chess)
-        self.bot = DeepLearningBot(chess=self.chess, playerIndex=-1)
+        self.bot = DeepLearningBot(chess=self.chess, playerIndex=-1, modelFileName=modelFileName)
         
         self.turn = "Player"
         self.botThinkingTimer = 0.

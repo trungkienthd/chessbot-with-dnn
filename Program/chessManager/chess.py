@@ -6,9 +6,9 @@ class Chess():
     
     def __init__(self):
         self.board = None
-        self.initializeChessGame()
+        self.initializeChessBoard()
         
-    def initializeChessGame(self):
+    def initializeChessBoard(self):
         self.board = chess.Board()
         
     def getFen(self):
@@ -23,7 +23,7 @@ class Chess():
                 self.board.push_uci(moveToString)
                 print("\n=======================================================================================")
                 print("Move {} performed successfully.".format(moveToString))
-                # print("Current board's FEN: {}".format(self.board.fen()))
+                print("Current board's FEN: {}".format(self.board.fen()))
             except:
                 print("Failed to perform move {}: {}".format(moveToString, sys.exc_info()))
         else:

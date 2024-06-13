@@ -14,11 +14,13 @@ class Trainer:
         
         self.xTrain, self.yTrain, self.xTest, self.yTest = self.readData(dataFileName=dataFileName)
         
+        self.numberOfEpoches = numberOfEpoches
+        
         self.batchSize = batchSize
         if self.batchSize == 0:
-            self.trainWithStochasticGD(numberOfEpoches=numberOfEpoches)
+            self.trainWithStochasticGD(numberOfEpoches=self.numberOfEpoches)
         else:
-            self.trainWithMiniBatchGD(numberOfEpoches=numberOfEpoches, batchSize=self.batchSize)
+            self.trainWithMiniBatchGD(numberOfEpoches=self.numberOfEpoches, batchSize=self.batchSize)
         
         self.test()
                 

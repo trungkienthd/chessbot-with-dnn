@@ -70,8 +70,8 @@ class Linear():
         #         [ b_1] ]
         #
         #   => Z with shape (2, 4)
-        #       [ [ (W_00 * x_00 + W_01 * x_10 + W_02 * + x_20 + b_0), (W_00 * x_01 + W_01 * x_11 + W_02 * + x_21 + b_0), (W_00 * x_02 + W_01 * x_12 + W_02 * + x_22 + b_0), (W_00 * x_03 + W_01 * x_13 + W_02 * + x_23 + b_0) ],
-        #         [ (W_10 * x_00 + W_11 * x_10 + W_12 * + x_20 + b_1), (W_10 * x_01 + W_11 * x_11 + W_12 * + x_21 + b_1), (W_10 * x_02 + W_11 * x_12 + W_12 * + x_22 + b_1), (W_10 * x_03 + W_11 * x_13 + W_12 * + x_23 + b_1) ] ]
+        #       [ [ (W_00 * x_00 + W_01 * x_10 + W_02 * x_20 + b_0), (W_00 * x_01 + W_01 * x_11 + W_02 * + x_21 + b_0), (W_00 * x_02 + W_01 * x_12 + W_02 * + x_22 + b_0), (W_00 * x_03 + W_01 * x_13 + W_02 * + x_23 + b_0) ],
+        #         [ (W_10 * x_00 + W_11 * x_10 + W_12 * x_20 + b_1), (W_10 * x_01 + W_11 * x_11 + W_12 * + x_21 + b_1), (W_10 * x_02 + W_11 * x_12 + W_12 * + x_22 + b_1), (W_10 * x_03 + W_11 * x_13 + W_12 * + x_23 + b_1) ] ]
                 
         # print("=======================Z - PROPERLY CALCULATING=========================")                 
         # print(Z)
@@ -137,13 +137,29 @@ class Linear():
         # print("Back W after updating: {}".format(self.W))
         
         return (deltaA, deltaW, deltab)
+   
+# ===============================================================================================================================
+# ACTIVATION FUNCTION LAYER CLASS  
+class ActivationFunction():
     
+    def __init__(self): 
+        self.cache = None
+        
+    def __str__(self):
+        raise NotImplementedError("This method should be overridden.")
+    
+    def forward(self, A):
+        raise NotImplementedError("This method should be overridden.")
+    
+    def backward(self, deltaZ):
+        raise NotImplementedError("This method should be overridden.")
+        
 # ===============================================================================================================================
 # ReLU ACTIVATION FUNCTION CLASS
-class ReLU():
+class ReLU(ActivationFunction):
     
     def __init__(self):
-        self.cache = None
+        super().__init__()
         
     def __str__(self):
         return "ReLU"
@@ -193,10 +209,10 @@ class ReLU():
     
 # ===============================================================================================================================
 # SIGMOID ACTIVATION FUNCTION CLASS
-class Sigmoid():
+class Sigmoid(ActivationFunction):
     
     def __init__(self):
-        self.cache = None
+        super().__init__()
         
     def __str__(self):
         return "Sigmoid"
@@ -226,10 +242,10 @@ class Sigmoid():
 
 # ===============================================================================================================================
 # GAUSSIAN ACTIVATION FUNCTION CLASS
-class Gaussian():
+class Gaussian(ActivationFunction):
     
     def __init__(self):
-        self.cache = None
+        super().__init__()
         
     def __str__(self):
         return "Gaussian"
@@ -239,10 +255,10 @@ class Gaussian():
         # Cache is stored for computing the backward pass efficiently
         self.cache = A
         
-        # ReLU activation function is stated: f(x) = e^(-x^2)
+        # Gaussian activation function is stated: f(x) = (σ*sqrt(2pi))^(-1) * e^(-(x-μ)^2/2σ^2) ≈ 0.2 * e^(-x^2/8) (μ = 0, σ = 2)
         
         # Calculate the output of this ReLU layer
-        Z = np.exp(-A**2)
+        Z = 0.2 * np.exp(-A**2 / 8.)
         
         # print("===================================Z===================================")
         # print(Z)
@@ -255,7 +271,7 @@ class Gaussian():
         A = self.cache
 
         # Calculate the gradient of the output with the respect to this Gaussian layer's input (dZ / dA):
-        gradientZToA = -2 * A * np.exp(-A**2)
+        gradientZToA = -0.05 * A * np.exp(-A**2 / 8.)
         
         # deltaA is the gradient of the cost with respect to the input of this Gaussian layer (dL / dA)
         # Using the chain rule, it is easy to see that: dL / dA = (dL / dZ) * (dZ / dA) = deltaZ * gradientZToA

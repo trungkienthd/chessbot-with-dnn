@@ -18,15 +18,16 @@ class DeepLearningBot(Bot):
         
         self.playerIndex = playerIndex
         
-        self.simulatedChessStateEncoder = ChessStateEncoder(self.chess.board)
-        
     def __str__(self):
-        return "DeepLearning"
+        return "DeepLearning_with_({})".format(self.dnn.hiddenLayers[0].activationFunctionLayer)
     
     def perform(self):
         move = self.evaluatePossibleMoves()
         try:
+            print("==============================================================")
+            print("Deep Learning Bot make a move: {}".format(move))
             self.chess.makeAMove(moveToString=move)
+            
         except:
             randomMove = random.choice(self.chess.getPossibleMoves())
             self.chess.makeAMove(moveToString=randomMove)
@@ -55,10 +56,12 @@ class DeepLearningBot(Bot):
         for move in possibleMoves:
             # Simulate a move
             self.chess.makeAMove(moveToString=move)
-                
-            simulatedTestData.loc[len(simulatedTestData)] = self.simulatedChessStateEncoder.createDataRecord()
             
-            simulatedScore = self.simulatedChessStateEncoder.evaluateWithStockfish() * self.playerIndex
+            simulatedChessStateEncoder = ChessStateEncoder(board=self.chess.board, isPrintedOutput=False)
+                
+            simulatedTestData.loc[len(simulatedTestData)] = simulatedChessStateEncoder.createDataRecord()
+            
+            simulatedScore = simulatedChessStateEncoder.evaluateWithStockfish() * self.playerIndex
             stockfishEvaluations.append(simulatedScore)
                 
             # Undo it, prepare for simulating the next move

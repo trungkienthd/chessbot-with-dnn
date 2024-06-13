@@ -42,13 +42,12 @@ class NeuralNetwork():
         print(" - An Output layer with {} units - {} activation function\n".format(self.finalLayer.linearLayer.numberOfUnits, self.finalLayer.activationFunctionLayer))
         print("     Weights: {} \n{}".format(self.finalLayer.linearLayer.W.shape, self.finalLayer.linearLayer.W))
         print("     Biases: {} \n{}".format(self.finalLayer.linearLayer.b.shape, self.finalLayer.linearLayer.b))
-        
-    def updateLearningRate(self, value):
-        
-        for layer in self.hiddenLayers:
-            layer.linear.learningRate = value
+      
+    # def updateLearningRate(self, value):
+    #     for layer in self.hiddenLayers:
+    #         layer.linear.learningRate = value
             
-        self.finalLayer.learningRate = value
+    #     self.finalLayer.learningRate = value
         
     def predict(self, X):
         
